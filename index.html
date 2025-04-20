@@ -1,111 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flashcards</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      width: 90%;
-      max-width: 400px;
-      padding: 2rem;
-      text-align: center;
-      cursor: pointer;
-      margin: 1rem 0;
-      transition: transform 0.3s ease;
-    }
-    .card:hover {
-      transform: scale(1.02);
-    }
-    .card p {
-      font-size: 1.5rem;
-    }
-    .navigation {
-      margin-top: 1rem;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      margin: 0 0.5rem;
-      font-size: 1rem;
-      border-radius: 6px;
-      border: none;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-    button:disabled {
-      background: #ccc;
-    }
-  </style>
-</head>
-<body>
-  <h1>Flashcards</h1>
-  <div class="card" id="card"><p>Loading...</p></div>
-  <div class="navigation">
-    <button onclick="prevCard()" id="prevBtn">Previous</button>
-    <button onclick="nextCard()" id="nextBtn">Next</button>
-  </div>
+<script>
+  function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  }
 
-  <script>
-    const sheetID = '1bCMUYtliXbYCUzRx2ZsrmriONr2Fso8NAPrl4Q1pSmY';
-    const sheetName = 'Sheet1';
-    const url = `https://opensheet.elk.sh/${sheetID}/${sheetName}`;
+  const sheetID = getQueryParam('sheet');
+  const sheetName = 'Sheet1'; // можно сделать тоже параметром, если нужно
+  const url = sheetID ? `https://opensheet.elk.sh/${sheetID}/${sheetName}` : null;
 
-    let words = [];
-    let current = 0;
-    let flipped = false;
+  let words = [];
+  let current = 0;
+  let flipped = false;
 
-    async function loadWords() {
-      try {
-        const response = await fetch(url);
-        words = await response.json();
-        showCard();
-      } catch (e) {
-        document.getElementById('card').innerHTML = '<p>Error loading data</p>';
-      }
+  async function loadWords() {
+    if (!url) {
+      document.getElementById('card').innerHTML = '<p>Sheet ID is missing in URL</p>';
+      return;
     }
 
-    function showCard() {
-      if (!words.length) return;
-      const card = document.getElementById('card');
-      const word = words[current];
-      card.innerHTML = `<p>${flipped ? word.Translation : word.English}</p>`;
-    }
-
-    document.getElementById('card').addEventListener('click', () => {
-      flipped = !flipped;
+    try {
+      const response = await fetch(url);
+      words = await response.json();
+      if (!words.length) throw new Error("Empty data");
       showCard();
-    });
-
-    function nextCard() {
-      if (current < words.length - 1) {
-        current++;
-        flipped = false;
-        showCard();
-      }
+    } catch (e) {
+      document.getElementById('card').innerHTML = '<p>Error loading data</p>';
     }
+  }
 
-    function prevCard() {
-      if (current > 0) {
-        current--;
-        flipped = false;
-        showCard();
-      }
+  function showCard() {
+    if (!words.length) return;
+    const card = document.getElementById('card');
+    const word = words[current];
+    card.innerHTML = `<p>${flipped ? word.Translation : word.English}</p>`;
+  }
+
+  document.getElementById('card').addEventListener('click', () => {
+    flipped = !flipped;
+    showCard();
+  });
+
+  function nextCard() {
+    if (current < words.length - 1) {
+      current++;
+      flipped = false;
+      showCard();
     }
+  }
 
-    loadWords();
-  </script>
-</body>
-</html>
+  function prevCard() {
+    if (current > 0) {
+      current--;
+      flipped = false;
+      showCard();
+    }
+  }
+
+  loadWords();
+</script>
