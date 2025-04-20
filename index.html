@@ -6,138 +6,183 @@
   <title>Flashcards</title>
   <style>
     :root {
-      color-scheme: light dark;
+      --bg-light: #f7f7f7;
+      --bg-dark: #121212;
+      --card-light: #ffffff;
+      --card-dark: #1e1e1e;
+      --text-light: #000000;
+      --text-dark: #ffffff;
+      --button: #007bff;
+      --button-disabled: #ccc;
     }
+
     body {
-      font-family: sans-serif;
-      background: var(--bg, #f7f7f7);
-      color: var(--fg, #000);
       margin: 0;
       padding: 0;
+      font-family: sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      transition: background 0.3s, color 0.3s;
     }
-    .toggle-theme {
+
+    body.dark {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    #themeToggle {
       position: absolute;
       top: 10px;
       right: 10px;
-      padding: 0.4rem 0.6rem;
-      background: #444;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
     }
-    .container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+
+    #menu {
       padding: 1rem;
     }
+
     .card {
-      background: white;
-      color: black;
+      background: var(--card-light);
+      color: var(--text-light);
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      padding: 2rem;
-      text-align: center;
-      cursor: pointer;
+      margin: 1rem;
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 1rem;
-    }
-    .navigation {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-top: auto;
-    }
-    button {
+      font-size: 1.5rem;
       padding: 1rem;
-      font-size: 1.2rem;
-      border-radius: 8px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark .card {
+      background: var(--card-dark);
+      color: var(--text-dark);
+    }
+
+    #card {
+      display: none;
+    }
+
+    .navigation {
+      display: none;
+      flex-direction: column;
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .navigation button {
+      padding: 1rem;
+      font-size: 1.25rem;
       border: none;
-      background: #007bff;
+      border-radius: 8px;
+      background: var(--button);
       color: white;
       cursor: pointer;
       width: 100%;
     }
-    .menu {
+
+    .navigation button:disabled {
+      background: var(--button-disabled);
+    }
+
+    ul {
+      list-style: none;
       padding: 1rem;
     }
-    .menu button {
-      margin-bottom: 0.5rem;
+
+    li {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      background: var(--card-light);
+      color: var(--text-light);
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    @media (min-width: 600px) {
+
+    body.dark li {
+      background: var(--card-dark);
+      color: var(--text-dark);
+    }
+
+    @media(min-width: 600px) {
       .navigation {
-        flex-direction: column;
-        gap: 0.5rem;
+        flex-direction: row;
+        justify-content: center;
       }
-      button {
-        width: 100%;
+
+      .navigation button {
+        width: auto;
+        margin: 0 0.5rem;
       }
-    }
-    [data-theme="dark"] {
-      --bg: #111;
-      --fg: #eee;
-    }
-    [data-theme="dark"] .card {
-      background: #222;
-      color: #eee;
     }
   </style>
 </head>
 <body>
-  <button class="toggle-theme" onclick="toggleTheme()">🌓</button>
-  <div class="container" id="app">
-    <div class="menu" id="menu"></div>
-    <div class="card" id="card" style="display:none;"><p>Loading...</p></div>
-    <div class="navigation" style="display:none;" id="nav">
-      <button onclick="prevCard()" id="prevBtn">Previous</button>
-      <button onclick="nextCard()" id="nextBtn">Next</button>
-    </div>
+  <button id="themeToggle">🌗</button>
+  <div id="menu"><p>Loading...</p></div>
+  <div class="card" id="card"><p>Loading...</p></div>
+  <div class="navigation" id="nav">
+    <button onclick="prevCard()">Previous</button>
+    <button onclick="nextCard()">Next</button>
   </div>
 
   <script>
-    const menuSheetID = '1Ey5g7pnznTwsZmwLOpBagGJTyh3L7VdCW0nWYhDklGY';
-    const menuURL = `https://opensheet.elk.sh/${menuSheetID}/_Menu`;
+    const card = document.getElementById('card');
+    const menuDiv = document.getElementById('menu');
+    const nav = document.getElementById('nav');
+    const themeToggle = document.getElementById('themeToggle');
+
     let words = [];
     let current = 0;
     let flipped = false;
 
-    function toggleTheme() {
-      const currentTheme = document.body.getAttribute("data-theme");
-      document.body.setAttribute("data-theme", currentTheme === "dark" ? "light" : "dark");
+    const menuSheetId = '1Ey5g7pnznTwsZmwLOpBagGJTyh3L7VdCW0nWYhDklGY';
+    const menuSheetName = '_Menu';
+    const menuUrl = `https://opensheet.elk.sh/${menuSheetId}/${menuSheetName}`;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
     }
 
     async function loadMenu() {
       try {
-        const res = await fetch(menuURL);
-        const list = await res.json();
-        const menuDiv = document.getElementById("menu");
-        menuDiv.innerHTML = "<h3>Выбери набор:</h3>";
-        list.forEach(item => {
-          const btn = document.createElement("button");
-          btn.textContent = item.Title || item.Name || "Untitled";
-          btn.onclick = () => loadWords(item.ID);
-          menuDiv.appendChild(btn);
+        const res = await fetch(menuUrl);
+        const data = await res.json();
+        menuDiv.innerHTML = '<ul>' +
+          data.map(item => `<li data-id="${item.ID}" data-sheet="${item.Sheet}">${item.Name}</li>`).join('') +
+          '</ul>';
+
+        document.querySelectorAll('#menu li').forEach(li => {
+          li.addEventListener('click', () => {
+            const id = li.dataset.id;
+            const sheet = li.dataset.sheet;
+            loadWords(id, sheet);
+          });
         });
-      } catch {
-        document.getElementById("menu").innerHTML = "<p>Failed to load menu</p>";
+      } catch (e) {
+        menuDiv.innerHTML = '<p>Failed to load menu</p>';
       }
     }
 
-    async function loadWords(sheetID) {
+    async function loadWords(sheetID, sheetName) {
+      const url = `https://opensheet.elk.sh/${sheetID}/${sheetName}`;
       try {
-        const response = await fetch(`https://opensheet.elk.sh/${sheetID}/Sheet1`);
-        const data = await response.json();
-        // Попробуем найти правильные ключи
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.length) {
+          throw new Error("No data found");
+        }
+
         const sample = data[0];
         const engKey = Object.keys(sample).find(k => k.toLowerCase().includes('eng'));
         const transKey = Object.keys(sample).find(k => k.toLowerCase().includes('trans'));
@@ -150,30 +195,25 @@
         shuffle(words);
         current = 0;
         flipped = false;
-        document.getElementById('menu').style.display = 'none';
-        document.getElementById('card').style.display = 'flex';
-        document.getElementById('nav').style.display = 'flex';
-        showCard();
-      } catch {
-        document.getElementById('card').innerHTML = '<p>Error loading data</p>';
-      }
-    }
 
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        menuDiv.style.display = 'none';
+        card.style.display = 'flex';
+        nav.style.display = 'flex';
+
+        showCard();
+      } catch (e) {
+        card.innerHTML = '<p>Error loading data</p>';
+        card.style.display = 'flex';
       }
     }
 
     function showCard() {
       if (!words.length) return;
-      const card = document.getElementById('card');
       const word = words[current];
       card.innerHTML = `<p>${flipped ? word.Translation : word.English}</p>`;
     }
 
-    document.getElementById('card').addEventListener('click', () => {
+    card.addEventListener('click', () => {
       flipped = !flipped;
       showCard();
     });
@@ -181,18 +221,27 @@
     function nextCard() {
       if (current < words.length - 1) {
         current++;
-        flipped = false;
-        showCard();
+      } else {
+        current = 0;
       }
+      flipped = false;
+      showCard();
     }
 
     function prevCard() {
       if (current > 0) {
         current--;
-        flipped = false;
-        showCard();
+      } else {
+        current = words.length - 1;
       }
+      flipped = false;
+      showCard();
     }
+
+    // Темная тема
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+    });
 
     loadMenu();
   </script>
