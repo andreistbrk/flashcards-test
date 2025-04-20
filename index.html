@@ -136,7 +136,17 @@
     async function loadWords(sheetID) {
       try {
         const response = await fetch(`https://opensheet.elk.sh/${sheetID}/Sheet1`);
-        words = await response.json();
+        const data = await response.json();
+        // Попробуем найти правильные ключи
+        const sample = data[0];
+        const engKey = Object.keys(sample).find(k => k.toLowerCase().includes('eng'));
+        const transKey = Object.keys(sample).find(k => k.toLowerCase().includes('trans'));
+
+        words = data.map(row => ({
+          English: row[engKey],
+          Translation: row[transKey]
+        }));
+
         shuffle(words);
         current = 0;
         flipped = false;
