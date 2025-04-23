@@ -186,7 +186,9 @@
         document.getElementById('card').innerHTML = '<p>Loading...</p>'; // <— сброс
         document.getElementById('nav').style.display = 'flex';
     
-        showCard(); // <— гарантируем первый вызов
+        setTimeout(() => {
+        showCard();
+        }, 0); // <— гарантируем первый вызов
       } catch (e) {
         document.getElementById('card').innerHTML = '<p>Error loading data</p>';
         console.error(e);
