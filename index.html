@@ -117,21 +117,38 @@
     
     cardEl.addEventListener('touchstart', (e) => {
       touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
     });
     
     cardEl.addEventListener('touchend', (e) => {
       touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
       handleGesture();
     });
+
+    function showMenu() {
+      document.getElementById('menu').style.display = 'block';
+      document.getElementById('card').style.display = 'none';
+      document.getElementById('nav').style.display = 'none';
+    }
     
     function handleGesture() {
-      const delta = touchEndX - touchStartX;
-      if (Math.abs(delta) < 50) return; // игнорировать мелкие движения
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
     
-      if (delta < 0) {
-        nextCard(); // свайп влево → следующая карточка
-      } else {
-        prevCard(); // свайп вправо → предыдущая карточка
+      // Горизонтальные свайпы — листание карточек
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (Math.abs(deltaX) < 50) return;
+        if (deltaX < 0) {
+          nextCard(); // влево
+        } else {
+          prevCard(); // вправо
+        }
+      }
+    
+      // Вертикальный свайп вверх — вернуться в меню
+      else if (deltaY < -50) {
+        showMenu();
       }
     }
     
