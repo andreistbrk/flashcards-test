@@ -180,10 +180,13 @@
         shuffle(words);
         current = 0;
         flipped = false;
+    
         document.getElementById('menu').style.display = 'none';
         document.getElementById('card').style.display = 'flex';
+        document.getElementById('card').innerHTML = '<p>Loading...</p>'; // <— сброс
         document.getElementById('nav').style.display = 'flex';
-        showCard();
+    
+        showCard(); // <— гарантируем первый вызов
       } catch (e) {
         document.getElementById('card').innerHTML = '<p>Error loading data</p>';
         console.error(e);
