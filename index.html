@@ -107,6 +107,31 @@
       }
     }
 
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    const cardEl = document.getElementById('card');
+    
+    cardEl.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+    
+    cardEl.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleGesture();
+    });
+    
+    function handleGesture() {
+      const delta = touchEndX - touchStartX;
+      if (Math.abs(delta) < 50) return; // игнорировать мелкие движения
+    
+      if (delta < 0) {
+        nextCard(); // свайп влево → следующая карточка
+      } else {
+        prevCard(); // свайп вправо → предыдущая карточка
+      }
+    }
+    
     async function loadMenu() {
       try {
         const res = await fetch(MENU_URL);
