@@ -179,35 +179,40 @@
       try {
         const res = await fetch(url);
         words = await res.json();
+        
+        if (!words.length || !words[0].English || !words[0].Translation) {
+          throw new Error('Invalid data structure or empty list');
+        }
+    
         shuffle(words);
         current = 0;
         flipped = false;
     
         document.getElementById('menu').style.display = 'none';
         document.getElementById('card').style.display = 'flex';
-        document.getElementById('card').innerHTML = '<p>Loading...</p>'; // <— сброс
+        document.getElementById('card').innerHTML = '<p>Loading...</p>';
         document.getElementById('nav').style.display = 'flex';
     
-        setTimeout(() => {
-        showCard();
-        }, 0); // <— гарантируем первый вызов
+        showCard(); // теперь точно безопасно
       } catch (e) {
         document.getElementById('card').innerHTML = '<p>Error loading data</p>';
-        console.error(e);
+        console.error('loadCards error:', e);
       }
     }
 
     function showCard() {
-      if (!words.length) return;
+      if (!words.length || !words[current]) {
+        document.getElementById('card').innerHTML = '<p>No card data</p>';
+        return;
+      }
+    
       const word = words[current];
-      const content = flipped ? word.Translation : word.English;
+      const english = word.English || '[Missing English]';
+      const translation = word.Translation || '[Missing Translation]';
+    
+      const content = flipped ? translation : english;
       document.getElementById('card').innerHTML = `<p>${content}</p>`;
     }
-
-    document.getElementById('card').addEventListener('click', () => {
-      flipped = !flipped;
-      showCard();
-    });
 
     function nextCard() {
       if (current < words.length - 1) {
