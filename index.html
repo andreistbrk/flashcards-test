@@ -1,24 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-<link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#121212" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black" />
-<link rel="apple-touch-icon" href="icons/icon-192.png" />
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js');
-  }
-</script>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Flashcards</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#121212" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+
   <style>
     :root {
       color-scheme: dark;
     }
-
     body {
       margin: 0;
       padding: 0;
@@ -29,11 +31,9 @@
       flex-direction: column;
       height: 100vh;
     }
-
     #menu {
       padding: 1rem;
     }
-
     .menu-item {
       background: #1e1e1e;
       border-radius: 8px;
@@ -42,11 +42,9 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-
     .menu-item:hover {
       background: #333;
     }
-
     .card {
       flex-grow: 1;
       margin: 1rem;
@@ -60,40 +58,11 @@
       text-align: center;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-
-    .navigation {
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    button {
-      width: 100%;
-      padding: 1rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      background: #555;
-    }
   </style>
 </head>
 <body>
   <div id="menu"></div>
   <div class="card" id="card" style="display:none;"><p>Loading...</p></div>
-  
-  <!--
-  <div class="navigation" id="nav" style="display:none;">
-    <button onclick="nextCard()">Next</button>
-    <button onclick="prevCard()">Previous</button>
-  </div>
-  -->
 
   <script>
     const MENU_SHEET_ID = '1Ey5g7pnznTwsZmwLOpBagGJTyh3L7VdCW0nWYhDklGY';
@@ -110,55 +79,17 @@
       }
     }
 
-    let touchStartX = 0;
-    let touchEndX = 0;
-    
-    const cardEl = document.getElementById('card');
-    
-    cardEl.addEventListener('touchstart', (e) => {
-      touchStartX = e.changedTouches[0].screenX;
-      touchStartY = e.changedTouches[0].screenY;
-    });
-    
-    cardEl.addEventListener('touchend', (e) => {
-      touchEndX = e.changedTouches[0].screenX;
-      touchEndY = e.changedTouches[0].screenY;
-      handleGesture();
-    });
-
     function showMenu() {
       document.getElementById('menu').style.display = 'block';
       document.getElementById('card').style.display = 'none';
-      document.getElementById('nav').style.display = 'none';
     }
-    
-    function handleGesture() {
-      const deltaX = touchEndX - touchStartX;
-      const deltaY = touchEndY - touchStartY;
-    
-      // Горизонтальные свайпы — листание карточек
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        if (Math.abs(deltaX) < 50) return;
-        if (deltaX < 0) {
-          nextCard(); // влево
-        } else {
-          prevCard(); // вправо
-        }
-      }
-    
-      // Вертикальный свайп вниз — вернуться в меню
-      else if (deltaY > 50) {
-        showMenu();
-      }
-    }
-    
+
     async function loadMenu() {
       try {
         const res = await fetch(MENU_URL);
         const data = await res.json();
         const menuEl = document.getElementById('menu');
         menuEl.innerHTML = '';
-    
         data.forEach(entry => {
           const div = document.createElement('div');
           div.className = 'menu-item';
@@ -179,21 +110,19 @@
       try {
         const res = await fetch(url);
         words = await res.json();
-        
+        console.log("Loaded words:", words);
+
         if (!words.length || !words[0].English || !words[0].Translation) {
           throw new Error('Invalid data structure or empty list');
         }
-    
+
         shuffle(words);
         current = 0;
         flipped = false;
-    
+
         document.getElementById('menu').style.display = 'none';
         document.getElementById('card').style.display = 'flex';
-        document.getElementById('card').innerHTML = '<p>Loading...</p>';
-        document.getElementById('nav').style.display = 'flex';
-    
-        showCard(); // теперь точно безопасно
+        showCard();
       } catch (e) {
         document.getElementById('card').innerHTML = '<p>Error loading data</p>';
         console.error('loadCards error:', e);
@@ -205,12 +134,8 @@
         document.getElementById('card').innerHTML = '<p>No card data</p>';
         return;
       }
-    
       const word = words[current];
-      const english = word.English || '[Missing English]';
-      const translation = word.Translation || '[Missing Translation]';
-    
-      const content = flipped ? translation : english;
+      const content = flipped ? (word.Translation || '[Missing Translation]') : (word.English || '[Missing English]');
       document.getElementById('card').innerHTML = `<p>${content}</p>`;
     }
 
@@ -227,6 +152,34 @@
         current--;
         flipped = false;
         showCard();
+      }
+    }
+
+    document.getElementById('card').addEventListener('click', () => {
+      flipped = !flipped;
+      showCard();
+    });
+
+    // Свайпы
+    let touchStartX = 0, touchEndX = 0, touchStartY = 0, touchEndY = 0;
+    const cardEl = document.getElementById('card');
+    cardEl.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    });
+    cardEl.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
+      handleGesture();
+    });
+    function handleGesture() {
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (Math.abs(deltaX) < 50) return;
+        deltaX < 0 ? nextCard() : prevCard();
+      } else if (deltaY > 50) {
+        showMenu();
       }
     }
 
