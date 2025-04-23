@@ -158,12 +158,14 @@
         const data = await res.json();
         const menuEl = document.getElementById('menu');
         menuEl.innerHTML = '';
-
+    
         data.forEach(entry => {
           const div = document.createElement('div');
           div.className = 'menu-item';
           div.textContent = entry.Sheet || 'Untitled';
-          div.onclick = () => loadCards(entry.ID, entry.Sheet || 'Sheet1');
+          div.addEventListener('click', () => {
+            loadCards(entry.ID, entry.Sheet || 'Sheet1');
+          });
           menuEl.appendChild(div);
         });
       } catch (e) {
